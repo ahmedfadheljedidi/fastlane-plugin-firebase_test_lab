@@ -33,6 +33,11 @@ module Fastlane
         # The default Google Cloud Storage path we store app bundle and test results
         gcs_workfolder = generate_directory_name
 
+        params[:app_path] = "gs://test-lab-aridxvpx0y64m-n9dr7a81h5fhs/2021-01-26_15:37:21.355621_Ryfp"
+        matrix_id = "matrix-aw8a2klawnx5a"
+        params[:skip_validation] = true
+        params[:result_storage] = params[:app_path]
+
         # Firebase Test Lab requires an app bundle be already on Google Cloud Storage before starting the job
         if params[:app_path].to_s.start_with?("gs://")
           # gs:// is a path on Google Cloud Storage, we do not need to re-upload the app to a different bucket
@@ -66,13 +71,13 @@ module Fastlane
         UI.message("Test Results bucket: #{result_storage}")
         
         # We have gathered all the information. Call Firebase Test Lab to start the job now
-        matrix_id = ftl_service.start_job(gcp_project,
-                                          app_gcs_link,
-                                          result_storage,
-                                          params[:devices],
-                                          params[:timeout_sec],
-                                          params[:gcp_additional_client_info],
-                                          params[:xcode_version])
+        # matrix_id = ftl_service.start_job(gcp_project,
+        #                                   app_gcs_link,
+        #                                   result_storage,
+        #                                   params[:devices],
+        #                                   params[:timeout_sec],
+        #                                   params[:gcp_additional_client_info],
+        #                                   params[:xcode_version])
 
         # In theory, matrix_id should be available. Keep it to catch unexpected Firebase Test Lab API response
         if matrix_id.nil?
