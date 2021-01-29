@@ -125,9 +125,8 @@ module Fastlane
                                        default_value: nil),
           FastlaneCore::ConfigItem.new(key: :print_successful_test,
                                        description: "Set to true all successful tests will be printed. Default: nil",
-                                       is_string: false,
-                                       optional: true,
-                                       default_value: nil)
+                                       default_value: false,
+                                       type: Fastlane::Boolean)
 
         ]
       end

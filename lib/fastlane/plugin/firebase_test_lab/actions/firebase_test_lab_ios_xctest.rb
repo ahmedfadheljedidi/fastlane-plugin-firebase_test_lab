@@ -267,8 +267,10 @@ module Fastlane
             testCases.each do |testCase|
               name = testCase["testCaseReference"]["name"]
               status = testCase["status"]
-              if (print_successful_test == true && status.nil?)
+              if status.nil?
+                if print_successful_test
                 testCaseSummary += ":white_check_mark: " + name + "\n"
+                end
               else
                 testCaseSummary += ":fire: " + name + "\n"
               end
