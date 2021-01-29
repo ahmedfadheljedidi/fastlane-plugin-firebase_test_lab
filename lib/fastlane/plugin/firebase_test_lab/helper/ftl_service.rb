@@ -86,7 +86,7 @@ module Fastlane
         end
       end
 
-      def start_job(gcp_project, app_path, result_path, devices, timeout_sec, additional_client_info, xcode_version)
+      def start_job(test_ios, gcp_project, app_path, test_app_path, result_path, devices, timeout_sec, additional_client_info, xcode_version)
         if additional_client_info.nil? 
           additional_client_info = { version: VERSION }
         else
@@ -94,42 +94,78 @@ module Fastlane
         end
         additional_client_info = additional_client_info.map { |k,v| { key: k, value: v } }
 
-        ios_xc_test_hash = {
-          testsZip: {
-            gcsPath: app_path
+        if test_ios
+          ios_xc_test_hash = {
+            testsZip: {
+              gcsPath: app_path
+            }
           }
-        }
 
-        if !xcode_version.nil?
-          ios_xc_test_hash.merge!({ xcodeVersion: xcode_version})
-        end
+          if !xcode_version.nil?
+            ios_xc_test_hash.merge!({ xcodeVersion: xcode_version})
+          end
 
-        body = {
-          projectId: gcp_project,
-          testSpecification: {
-            testTimeout: {
-              seconds: timeout_sec
+          body = {
+            projectId: gcp_project,
+            testSpecification: {
+              testTimeout: {
+                seconds: timeout_sec
+              },
+              iosTestSetup: {},
+              iosXcTest: ios_xc_test_hash
             },
-            iosTestSetup: {},
-            iosXcTest: ios_xc_test_hash
-          },
-          environmentMatrix: {
-            iosDeviceList: {
-              iosDevices: devices.map(&FirebaseTestLabService.method(:map_device_to_proto))
+            environmentMatrix: {
+              iosDeviceList: {
+                iosDevices: devices.map(&FirebaseTestLabService.method(:map_ios_device_to_proto))
+              }
+            },
+            resultStorage: {
+              googleCloudStorage: {
+                gcsPath: result_path
+              }
+            },
+            clientInfo: {
+              name: PLUGIN_NAME,
+              clientInfoDetails: [
+                additional_client_info
+              ]
             }
-          },
-          resultStorage: {
-            googleCloudStorage: {
-              gcsPath: result_path
-            }
-          },
-          clientInfo: {
-            name: PLUGIN_NAME,
-            clientInfoDetails: [
-              additional_client_info
-            ]
           }
-        }
+        else
+          body = {
+            projectId: gcp_project,
+            testSpecification: {
+              testTimeout: {
+                seconds: timeout_sec
+              },
+              androidInstrumentationTest: {
+                appApk: {
+                  gcsPath: app_path
+                },
+                testApk: {
+                  gcsPath: test_app_path
+                }
+                orchestratorOption: OrchestratorOption.USE_ORCHESTRATOR
+              }
+            },
+            environmentMatrix: {
+              androidDeviceList: {
+                androidDevices: devices.map(&FirebaseTestLabService.method(:map_android_device_to_proto))
+              }
+            },
+            resultStorage: {
+              googleCloudStorage: {
+                gcsPath: result_path
+              }
+            },
+            clientInfo: {
+              name: PLUGIN_NAME,
+              clientInfoDetails: [
+                additional_client_info
+              ]
+            }
+          }
+        end
 
         conn = Faraday.new(FIREBASE_TEST_LAB_ENDPOINT)
         begin
@@ -230,14 +266,24 @@ module Fastlane
         return JSON.parse(resp.body)
       end
 
-      def self.map_device_to_proto(device)
+      def self.map_ios_device_to_proto(device)
         {
-          iosModelId: device[:ios_model_id],
-          iosVersionId: device[:ios_version_id],
+          iosModelId: device[:model],
+          iosVersionId: device[:version],
           locale: device[:locale],
           orientation: device[:orientation]
         }
       end
+
+      def self.map_android_device_to_proto(device)
+        {
+          androidModelId: device[:model],
+          androidVersionId: device[:version],
+          locale: device[:locale],
+          orientation: device[:orientation]
+        }
+      end
+
     end
   end
 end

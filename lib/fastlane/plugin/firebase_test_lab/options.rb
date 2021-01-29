@@ -5,6 +5,11 @@ module Fastlane
     class Options
       def self.available_options
         [
+          FastlaneCore::ConfigItem.new(key: :test_ios,
+                                       description: "true: Test iOS, false: Test Android",
+                                       default_value: true,
+                                       type: Fastlane::Boolean,
+                                       optional: false),
           FastlaneCore::ConfigItem.new(key: :gcp_project,
                                        description: "Google Cloud Platform project name",
                                        optional: false),
@@ -15,7 +20,7 @@ module Fastlane
                                        description: "A hash of additional client info you'd like to submit to Test Lab",
                                        type: Hash,
                                        optional: true),
-          FastlaneCore::ConfigItem.new(key: :app_path,
+          FastlaneCore::ConfigItem.new(key: :ios_app_path,
                                        description: "Path to the app, either on the filesystem or GCS address (gs://)",
                                        default_value:
                                          Actions.lane_context[Actions::SharedValues::SCAN_ZIP_BUILD_PRODUCTS_PATH],
@@ -28,12 +33,6 @@ module Fastlane
           FastlaneCore::ConfigItem.new(key: :devices,
                                        description: "Devices to test the app on",
                                        type: Array,
-                                       default_value: [{
-                                         ios_model_id: "iphonex",
-                                         ios_version_id: "11.2",
-                                         locale: "en_US",
-                                         orientation: "portrait"
-                                       }],
                                        verify_block: proc do |value|
                                          if value.empty?
                                            UI.user_error!("Devices cannot be empty")
@@ -43,8 +42,8 @@ module Fastlane
                                              UI.user_error!("Each device must be represented by a Hash object, " \
                                                "#{current.class} found")
                                            end
-                                           check_has_property(current, :ios_model_id)
-                                           check_has_property(current, :ios_version_id)
+                                           check_has_property(current, :model)
+                                           check_has_property(current, :version)
                                            set_default_property(current, :locale, "en_US")
                                            set_default_property(current, :orientation, "portrait")
                                          end
@@ -103,7 +102,23 @@ module Fastlane
                                        description: "Xcode version to be used by Firebase TestLab (if not filled then default will be used",
                                        is_string: true,
                                        default_value: nil,
-                                       optional: true)
+                                       optional: true),
+          FastlaneCore::ConfigItem.new(key: :android_app_apk,
+                                       description: "The path for your app apk. Default: app/build/outputs/apk/debug/app-debug.apk",
+                                       is_string: true,
+                                       optional: true,
+                                       default_value: "app/build/outputs/apk/debug/app-debug.apk"),
+          FastlaneCore::ConfigItem.new(key: :android_test_apk,
+                                       description: "The path for your android test apk. Default: app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk",
+                                       is_string: true,
+                                       optional: true,
+                                       default_value: "app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk"),
+          FastlaneCore::ConfigItem.new(key: :extra_options,
+                                       description: "Extra options that you need to pass to the gcloud command. Default: empty string",
+                                       is_string: true,
+                                       optional: true,
+                                       default_value: "")
+
         ]
       end
 

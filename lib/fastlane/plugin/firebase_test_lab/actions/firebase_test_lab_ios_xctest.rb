@@ -33,34 +33,49 @@ module Fastlane
         # The default Google Cloud Storage path we store app bundle and test results
         gcs_workfolder = generate_directory_name
 
-        params[:app_path] = "gs://test-lab-aridxvpx0y64m-n9dr7a81h5fhs/2021-01-26_15:37:21.355621_Ryfp"
-        matrix_id = "matrix-aw8a2klawnx5a"
-        params[:skip_validation] = true
-        params[:result_storage] = params[:app_path]
+        # params[:ios_app_path] = "gs://test-lab-aridxvpx0y64m-n9dr7a81h5fhs/2021-01-26_15:37:21.355621_Ryfp"
+        # matrix_id = "matrix-aw8a2klawnx5a"
+        # params[:skip_validation] = true
+        # params[:result_storage] = params[:ios_app_path]
 
         # Firebase Test Lab requires an app bundle be already on Google Cloud Storage before starting the job
-        if params[:app_path].to_s.start_with?("gs://")
+        if params[:ios_app_path].to_s.start_with?("gs://")
           # gs:// is a path on Google Cloud Storage, we do not need to re-upload the app to a different bucket
-          app_gcs_link = params[:app_path]
+          app_gcs_link = params[:ios_app_path]
         else
 
           if params[:skip_validation]
             UI.message("Skipping validation of app.")
           else
-            FirebaseTestLab::IosValidator.validate_ios_app(params[:app_path])
+            FirebaseTestLab::IosValidator.validate_ios_app(params[:ios_app_path])
           end
 
           # When given a local path, we upload the app bundle to Google Cloud Storage
-          upload_spinner = TTY::Spinner.new("[:spinner] Uploading the app to GCS...", format: :dots)
+          upload_spinner = TTY::Spinner.new("[:spinner] Uploading the app(s) to GCS...", format: :dots)
           upload_spinner.auto_spin
           upload_bucket_name = ftl_service.get_default_bucket(gcp_project)
           timeout = gcp_requests_timeout ? gcp_requests_timeout.to_i : nil
-          app_gcs_link = upload_file(params[:app_path],
-                                     upload_bucket_name,
-                                     "#{gcs_workfolder}/#{DEFAULT_APP_BUNDLE_NAME}",
-                                     gcp_project,
-                                     gcp_credential,
-                                     timeout)
+          if params[:test_ios]
+            app_gcs_link = upload_file(params[:ios_app_path],
+                                       upload_bucket_name,
+                                       "#{gcs_workfolder}/#{DEFAULT_APP_BUNDLE_NAME}",
+                                       gcp_project,
+                                       gcp_credential,
+                                       timeout)
+          else
+            app_gcs_link = upload_file(params[:android_app_apk],
+                                       upload_bucket_name,
+                                       "#{gcs_workfolder}/app-debug.apk",
+                                       gcp_project,
+                                       gcp_credential,
+                                       timeout)
+            test_app_gcs_link = upload_file(params[:android_test_apk],
+                                       upload_bucket_name,
+                                       "#{gcs_workfolder}/app-debug-androidTest.apk",
+                                       gcp_project,
+                                       gcp_credential,
+                                       timeout)
+          end  
           upload_spinner.success("Done")
         end
 
@@ -71,13 +86,15 @@ module Fastlane
         UI.message("Test Results bucket: #{result_storage}")
         
         # We have gathered all the information. Call Firebase Test Lab to start the job now
-        # matrix_id = ftl_service.start_job(gcp_project,
-        #                                   app_gcs_link,
-        #                                   result_storage,
-        #                                   params[:devices],
-        #                                   params[:timeout_sec],
-        #                                   params[:gcp_additional_client_info],
-        #                                   params[:xcode_version])
+        matrix_id = ftl_service.start_job(params[:test_ios],
+                                          gcp_project,
+                                          app_gcs_link,
+                                          test_app_gcs_link,
+                                          result_storage,
+                                          params[:devices],
+                                          params[:timeout_sec],
+                                          params[:gcp_additional_client_info],
+                                          params[:xcode_version])
 
         # In theory, matrix_id should be available. Keep it to catch unexpected Firebase Test Lab API response
         if matrix_id.nil?
