@@ -138,6 +138,7 @@ module Fastlane
               testTimeout: {
                 seconds: timeout_sec
               },
+              testSetup: {},
               androidInstrumentationTest: {
                 appApk: {
                   gcsPath: app_path
