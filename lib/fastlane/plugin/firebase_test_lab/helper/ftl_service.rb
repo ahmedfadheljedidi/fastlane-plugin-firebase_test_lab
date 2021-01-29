@@ -86,13 +86,19 @@ module Fastlane
         end
       end
 
-      def start_job(test_ios, gcp_project, app_path, test_app_path, result_path, devices, timeout_sec, additional_client_info, xcode_version)
+      def start_job(test_ios, gcp_project, app_path, test_app_path, result_path, devices, timeout_sec, additional_client_info, xcode_version, retry_if_failed)
         if additional_client_info.nil? 
           additional_client_info = { version: VERSION }
         else
           additional_client_info["version"] = VERSION
         end
         additional_client_info = additional_client_info.map { |k,v| { key: k, value: v } }
+
+        if retry_if_failed.nil?
+          retry_if_failed = 0
+        else
+          retry_if_failed = 1
+        end
 
         if test_ios
           ios_xc_test_hash = {
@@ -124,6 +130,7 @@ module Fastlane
                 gcsPath: result_path
               }
             },
+            "flakyTestAttempts": retry_if_failed,
             clientInfo: {
               name: PLUGIN_NAME,
               clientInfoDetails: [
@@ -138,7 +145,6 @@ module Fastlane
               testTimeout: {
                 seconds: timeout_sec
               },
-              testSetup: {},
               androidInstrumentationTest: {
                 appApk: {
                   gcsPath: app_path
@@ -159,6 +165,7 @@ module Fastlane
                 gcsPath: result_path
               }
             },
+            "flakyTestAttempts": retry_if_failed,
             clientInfo: {
               name: PLUGIN_NAME,
               clientInfoDetails: [
