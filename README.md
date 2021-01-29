@@ -97,7 +97,8 @@ firebase_test_lab_ios_xctest(
 - `result_storage`: Designate which location on Google Cloud Storage to store the test results. This should be a directory (e.g: `gs://your-bucket/tests/`)
 - `android_app_apk`: The path for your app apk. Default: app/build/outputs/apk/debug/app-debug.apk
 - `android_test_apk`: The path for your android test apk. Default: app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
-- `extra_options`: Extra options that you need to pass to the gcloud command. Default: empty string"
+- `extra_options`: Extra options that you need to pass to the gcloud command. Default: empty string
+- `retry_if_failed`: If set to true and a test failed, the test suite will be rerun once. Default: nil, no reruns
 
 ## Issues and Feedback
 

@@ -117,7 +117,12 @@ module Fastlane
                                        description: "Extra options that you need to pass to the gcloud command. Default: empty string",
                                        is_string: true,
                                        optional: true,
-                                       default_value: "")
+                                       default_value: ""),
+          FastlaneCore::ConfigItem.new(key: :retry_if_failed,
+                                       description: "Set to true if you want to rerun test sute when failed. Default: nil",
+                                       is_string: false,
+                                       optional: true,
+                                       default_value: nil)
 
         ]
       end
